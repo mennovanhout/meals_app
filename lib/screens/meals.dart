@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:meals_app/data/dummy_data.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meals_app/models/category.dart';
 import 'package:meals_app/models/meal.dart';
-import 'package:meals_app/screens/filters.dart';
+import 'package:meals_app/providers/filters_provider.dart';
 import 'package:meals_app/screens/meal.dart';
 import 'package:meals_app/widgets/meal_item.dart';
 
-class MealsScreen extends StatelessWidget {
-  const MealsScreen(this.category,
-      {super.key,
-      required this.onToggleFavourite,
-      this.meals,
-      this.selectedFilters});
+class MealsScreen extends ConsumerWidget {
+  const MealsScreen(this.category, {super.key, this.meals});
 
   final Category category;
-  final void Function(Meal meal) onToggleFavourite;
   final List<Meal>? meals;
-  final Map<Filter, bool>? selectedFilters;
 
   void _onSelectMeal(BuildContext context, Meal meal) {
     Navigator.push(
@@ -24,34 +18,17 @@ class MealsScreen extends StatelessWidget {
         MaterialPageRoute(
             builder: (context) => MealScreen(
                   meal,
-                  onToggleFavourite: onToggleFavourite,
                 )));
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filteredMealsFromProvider = ref.watch(filteredMealsProvider);
+
     final List<Meal> filteredMeals = meals ??
-        dummyMeals
+        filteredMealsFromProvider
             .where((meal) => meal.categories.contains(category.id))
-            .where((meal) {
-          if (selectedFilters![Filter.glutenFree]! && !meal.isGlutenFree) {
-            return false;
-          }
-
-          if (selectedFilters![Filter.lactoseFree]! && !meal.isLactoseFree) {
-            return false;
-          }
-
-          if (selectedFilters![Filter.vegetarian]! && !meal.isVegetarian) {
-            return false;
-          }
-
-          if (selectedFilters![Filter.vegan]! && !meal.isVegan) {
-            return false;
-          }
-
-          return true;
-        }).toList();
+            .toList();
 
     Widget content = Center(
       child: Column(
